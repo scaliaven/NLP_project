@@ -9,7 +9,7 @@ import pytorch_lightning as pl
 from pathlib import Path
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DeepSpeedPlugin
-from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, Callback
 
 from molbart.tokeniser import MolEncTokeniser
@@ -226,7 +226,8 @@ def load_tokeniser(vocab_path, chem_token_start):
 
 
 def build_trainer(args):
-    logger = TensorBoardLogger(args.log_dir, name=args.task)
+    # logger = TensorBoardLogger(args.log_dir, name=args.task)
+    logger = WandbLogger(project="molbart", name=args.task, save_dir=args.log_dir)
     lr_monitor = LearningRateMonitor(logging_interval="step")
     checkpoint_cb = ModelCheckpoint(monitor="val_molecular_accuracy", save_last=True)
 
@@ -263,7 +264,7 @@ def build_trainer(args):
         callbacks=callbacks,
         plugins=plugins,
         check_val_every_n_epoch=check_val,
-        precision=16
+        precision=16,
     )
     return trainer
 

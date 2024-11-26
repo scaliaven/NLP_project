@@ -1,9 +1,9 @@
 #!/bin/bash
 
-python setup.py develop
+# python setup.py develop
 python -m molbart.train \
   --dataset zinc \
-  --data_path ../data/zinc \
+  --data_path ./data/zinc \
   --model_type bart \
   --lr 1.0 \
   --schedule transformer \

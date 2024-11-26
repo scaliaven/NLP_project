@@ -352,7 +352,6 @@ class BARTModel(_AbsTransformerModel):
             dropout,
             **kwargs
         )
-
         self.sampler = decode_sampler
         self.val_sampling_alg = "greedy"
         self.test_sampling_alg = "beam"
@@ -371,6 +370,7 @@ class BARTModel(_AbsTransformerModel):
         self.log_softmax = nn.LogSoftmax(dim=2)
 
         self._init_params()
+        self.kwargs = kwargs
 
     def forward(self, x):
         """ Apply SMILES strings to model
@@ -565,6 +565,47 @@ class BARTModel(_AbsTransformerModel):
         }
         model_output = self.decode(decode_input)
         return model_output
+
+    def configure_optimizers(self):
+
+        if self.kwargs['lora']:
+            config = peft.LoraConfig(r=8, lora_alpha=16, target_modules=['q_proj', 'k_proj', 'v_proj'],
+                                    modules_to_save=['visual_projection'],
+                                    )
+            model.encoder.layers = peft.get_peft_model(model.encoder.layers, config)
+
+        elif self.kwargs['encoder_train']:
+            print("only encoder train")
+            for param in self.decoder.parameters():
+                param.requires_grad = False
+
+        elif self.kwargs['decoder_train']:
+            print("only decoder train")
+            for param in self.encoder.parameters():
+                param.requires_grad = False
+
+        params = self.parameters()
+        optim = torch.optim.Adam(filter(lambda p: p.requires_grad, params), lr=self.lr, weight_decay=self.weight_decay, betas=(0.9, 0.999))
+
+        if self.schedule == "const":
+            print("Using constant LR schedule.")
+            const_sch = FuncLR(optim, lr_lambda=self._const_lr)
+            sch = {"scheduler": const_sch, "interval": "step"}
+
+        elif self.schedule == "cycle":
+            print("Using cyclical LR schedule.")
+            cycle_sch = OneCycleLR(optim, self.lr, total_steps=self.num_steps)
+            sch = {"scheduler": cycle_sch, "interval": "step"}
+
+        elif self.schedule == "transformer":
+            print("Using original transformer schedule.")
+            trans_sch = FuncLR(optim, lr_lambda=self._transformer_lr)
+            sch = {"scheduler": trans_sch, "interval": "step"}
+
+        else:
+            raise ValueError(f"Unknown schedule {self.schedule}")
+
+        return [optim], [sch]
 
 
 class UnifiedModel(_AbsTransformerModel):

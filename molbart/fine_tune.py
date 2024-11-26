@@ -4,6 +4,7 @@ import argparse
 import molbart.util as util
 from molbart.decoder import DecodeSampler
 from molbart.models.pre_train import BARTModel, UnifiedModel
+import peft
 
 
 # Default training hyperparameters
@@ -83,7 +84,10 @@ def load_model(args, sampler, vocab_size, total_steps, pad_token_idx):
         "aug_prob": args.aug_prob,
         "train_tokens": train_tokens,
         "num_buckets": num_buckets,
-        "limit_val_batches": args.limit_val_batches
+        "limit_val_batches": args.limit_val_batches,
+        "lora": args.lora,
+        "encoder_train": args.encoder_train,
+        "decoder_train": args.decoder_train,
     }
 
     # If no model is given, use random init
@@ -118,6 +122,8 @@ def load_model(args, sampler, vocab_size, total_steps, pad_token_idx):
             )
         else:
             raise ValueError(f"Unknown model type: {args.model_type}")
+
+        print(model)
 
     return model
 
@@ -203,6 +209,9 @@ if __name__ == "__main__":
     parser.add_argument("--limit_val_batches", type=float, default=DEFAULT_LIMIT_VAL_BATCHES)
     parser.add_argument("--gpus", type=int, default=util.DEFAULT_GPUS)
     parser.add_argument("--num_nodes", type=int, default=util.DEFAULT_NUM_NODES)
+    parser.add_argument('--lora', action='store_true', default=False, help="lora training enabled")
+    parser.add_argument('--encoder_train', action='store_true', default=False, help="only encoder training enabled")
+    parser.add_argument('--decoder_train', action='store_true', default=False, help="only decoder training enabled")
 
     # Rand init model args
     parser.add_argument("--d_model", type=int, default=util.DEFAULT_D_MODEL)
