@@ -363,6 +363,22 @@ class BARTModel(_AbsTransformerModel):
 
         dec_norm = nn.LayerNorm(d_model)
         dec_layer = PreNormDecoderLayer(d_model, num_heads, d_feedforward, dropout, activation)
+        if kwargs['insert_mid_layer']:
+            mlp_depth = 3
+            modules = [nn.Linear(self.d_model, self.d_model)]
+            for _ in range(1, mlp_depth):
+                modules.append(nn.GELU())
+                modules.append(nn.Linear(self.d_model, self.d_model))
+            self.mid = nn.Sequential(*modules)
+
+        if kwargs['add_end_layer']:
+            mlp_depth = 3
+            modules = [nn.Linear(self.d_model, self.d_model)]
+            for _ in range(1, mlp_depth):
+                modules.append(nn.GELU())
+                modules.append(nn.Linear(self.d_model, self.d_model))
+            self.end = nn.Sequential(*modules)
+
         self.decoder = nn.TransformerDecoder(dec_layer, num_layers, norm=dec_norm)
 
         self.token_fc = nn.Linear(d_model, vocab_size)
@@ -403,6 +419,8 @@ class BARTModel(_AbsTransformerModel):
         tgt_mask = self._generate_square_subsequent_mask(seq_len, device=encoder_embs.device)
 
         memory = self.encoder(encoder_embs, src_key_padding_mask=encoder_pad_mask)
+        if self.kwargs['insert_mid_layer']:
+            memory = self.mid(memory)
         model_output = self.decoder(
             decoder_embs,
             memory,
@@ -410,6 +428,8 @@ class BARTModel(_AbsTransformerModel):
             tgt_key_padding_mask=decoder_pad_mask,
             memory_key_padding_mask=encoder_pad_mask.clone()
         )
+        if self.kwargs['add_end_layer']:
+            model_output = self.end(model_output)
 
         token_output = self.token_fc(model_output)
 
@@ -468,6 +488,8 @@ class BARTModel(_AbsTransformerModel):
             memory_key_padding_mask=memory_pad_mask,
             tgt_mask=tgt_mask
         )
+        if self.kwargs['add_end_layer']:
+            model_output = self.end(model_output)
         token_output = self.token_fc(model_output)
         token_probs = self.log_softmax(token_output)
         return token_probs
@@ -536,6 +558,8 @@ class BARTModel(_AbsTransformerModel):
             "encoder_pad_mask": enc_mask
         }
         memory = self.encode(encode_input)
+        if self.kwargs['insert_mid_layer']:
+            memory = self.mid(memory)
         mem_mask = enc_mask.clone()
 
         _, batch_size, _ = tuple(memory.size())
@@ -574,13 +598,13 @@ class BARTModel(_AbsTransformerModel):
                                     )
             model.encoder.layers = peft.get_peft_model(model.encoder.layers, config)
 
-        elif self.kwargs['encoder_train']:
-            print("only encoder train")
+        elif self.kwargs['fix_decoder']:
+            print("fixing decoder")
             for param in self.decoder.parameters():
                 param.requires_grad = False
 
-        elif self.kwargs['decoder_train']:
-            print("only decoder train")
+        elif self.kwargs['fix_encoder']:
+            print("fixing encoder")
             for param in self.encoder.parameters():
                 param.requires_grad = False
 

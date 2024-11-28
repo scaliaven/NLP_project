@@ -12,6 +12,8 @@ python -m molbart.fine_tune \
   --acc_batches 4 \
   --augment all \
   --aug_prob 0.5 \
-  --decoder_train \
+  --fix_encoder \
   --gpus 1 \
+  --add_end_layer \
+  # --insert_mid_layer \
 

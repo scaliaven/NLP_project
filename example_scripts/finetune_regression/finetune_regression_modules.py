@@ -721,6 +721,8 @@ class EncoderOfBARTModel(_AbsTransformerModel):
             memory_key_padding_mask=memory_pad_mask,
             tgt_mask=tgt_mask
         )
+        if self.kwargs['add_end_layer']:
+            model_output = self.end(model_output)
         token_output = self.token_fc(model_output)
         token_probs = self.log_softmax(token_output)
         return token_probs
@@ -919,6 +921,8 @@ class EncoderOfBARTModel(_AbsTransformerModel):
             "encoder_pad_mask": enc_mask
         }
         memory = self.encode(encode_input)
+        if self.kwargs['insert_mid_layer']:
+            memory = self.mid(memory)
         mem_mask = enc_mask.clone()
 
         _, batch_size, _ = tuple(memory.size())

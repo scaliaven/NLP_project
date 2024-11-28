@@ -86,8 +86,10 @@ def load_model(args, sampler, vocab_size, total_steps, pad_token_idx):
         "num_buckets": num_buckets,
         "limit_val_batches": args.limit_val_batches,
         "lora": args.lora,
-        "encoder_train": args.encoder_train,
-        "decoder_train": args.decoder_train,
+        "fix_decoder": args.fix_decoder,
+        "fix_encoder": args.fix_encoder,
+        "insert_mid_layer": args.insert_mid_layer,
+        "add_end_layer": args.add_end_layer,
     }
 
     # If no model is given, use random init
@@ -105,6 +107,7 @@ def load_model(args, sampler, vocab_size, total_steps, pad_token_idx):
                 weight_decay=args.weight_decay,
                 schedule=args.schedule,
                 warm_up_steps=args.warm_up_steps,
+                strict=False,
                 **extra_args
             )
         elif args.model_type == "unified":
@@ -210,8 +213,11 @@ if __name__ == "__main__":
     parser.add_argument("--gpus", type=int, default=util.DEFAULT_GPUS)
     parser.add_argument("--num_nodes", type=int, default=util.DEFAULT_NUM_NODES)
     parser.add_argument('--lora', action='store_true', default=False, help="lora training enabled")
-    parser.add_argument('--encoder_train', action='store_true', default=False, help="only encoder training enabled")
-    parser.add_argument('--decoder_train', action='store_true', default=False, help="only decoder training enabled")
+    parser.add_argument('--fix_decoder', action='store_true', default=False, help="only encoder training enabled")
+    parser.add_argument('--fix_encoder', action='store_true', default=False, help="only decoder training enabled")
+    parser.add_argument('--insert_mid_layer', action='store_true', default=False, help="inserting layers between encoder and decoder")
+    parser.add_argument('--add_end_layer', action='store_true', default=False, help="adding layers after decoder")
+    
 
     # Rand init model args
     parser.add_argument("--d_model", type=int, default=util.DEFAULT_D_MODEL)
