@@ -74,8 +74,8 @@ def convert_and_split_smiles(input_file, final_output_file):
 
 if __name__ == "__main__":
     # Define file paths and dataset category
-    input_file = '/Users/zhaodongliu/data/ord-data/hhj.txt'          # 原始 SMILES 文件路径
-    final_output = '/Users/zhaodongliu/data/ord-data/hhj_updated.txt' # 最终输出文件路径
+    input_file = '/Users/zhaodongliu/data/ord-data/retro_llm.txt'          # 原始 SMILES 文件路径
+    final_output = '/Users/zhaodongliu/data/ord-data/retro_llm111.txt' # 最终输出文件路径
 
     # Call the function
     convert_and_split_smiles(input_file, final_output)

@@ -9,16 +9,35 @@ def main(f1, f2):
             data = json.loads(line.strip())
             input_smiles = data.get('input', '')
             gold_smiles = data.get('gold', '')
-            pred_smiles = '; '.join(data.get('pred', []))
-            
-            if gold_smiles in pred_smiles:
-                input_smiless.append(input_smiles)
-                pred_smiless.append(gold_smiles)
+            try:
+                pred_smiles = data.get('output', [])
 
-            else:
-                input_smiless.append(input_smiles)
-                apd = random.choice(pred_smiles.split(';'))
-                pred_smiless.append(apd)
+                flag = False
+                for i in pred_smiles:
+                    # print(i)
+                    # print(i.split('</SMILES>'))
+                    # break
+                    for j in i.split('<SMILES>', 1)[-1].split('</SMILES>'):
+                        if gold_smiles in j:
+                            input_smiless.append(input_smiles)
+                            pred_smiless.append(gold_smiles)
+                            flag = True
+                            break
+                    if flag:
+                        break   
+
+                if not flag:
+                    input_smiless.append(input_smiles)
+
+                    
+                    apd = random.choice(pred_smiles).split('<SMILES>', 1)[-1].split('</SMILES>')
+                    for k in range(len(apd)):
+                        if "</s><unk>" in apd[k]:
+                            apd.pop(k)
+                    pred_smiless.append(random.choice(apd))
+            except:
+                continue
+                    
 
     with open(f2, 'w', encoding='utf-8') as f:
         for i in range(len(input_smiless)):
@@ -28,4 +47,4 @@ def main(f1, f2):
         
 
 if __name__ == "__main__":
-    main('/Users/zhaodongliu/data/ord-data/retrosynthesis.jsonl', '/Users/zhaodongliu/data/ord-data/hhj.txt')
+    main('/Users/zhaodongliu/data/ord-data/forward_synthesis.jsonl', '/Users/zhaodongliu/data/ord-data/retro_llm.txt')
