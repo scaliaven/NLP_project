@@ -29,10 +29,9 @@ def main(f1, f2):
                 if not flag:
                     input_smiless.append(input_smiles)
 
-                    
                     apd = random.choice(pred_smiles).split('<SMILES>', 1)[-1].split('</SMILES>')
                     for k in range(len(apd)):
-                        if "</s><unk>" in apd[k]:
+                        if "</s><unk><unk><unk>" in apd[k]:
                             apd.pop(k)
                     pred_smiless.append(random.choice(apd))
             except:
@@ -47,4 +46,4 @@ def main(f1, f2):
         
 
 if __name__ == "__main__":
-    main('/Users/zhaodongliu/data/ord-data/forward_synthesis.jsonl', '/Users/zhaodongliu/data/ord-data/retro_llm.txt')
+    main('/Users/zhaodongliu/Documents/GitHub/NLP_project/retrosynthesis.jsonl', '/Users/zhaodongliu/Documents/GitHub/NLP_project/retro.txt')
