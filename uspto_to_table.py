@@ -47,7 +47,7 @@ def convert_and_split_smiles(input_file, final_output_file):
             if reactants and products:
                 data['Reactants'].append(reactants)
                 data['Products'].append(products)
-                data['set'].append('0')
+                data['set'].append('train')
             else:
                 print(f"Skipping line {line_num} due to invalid format.")
 
