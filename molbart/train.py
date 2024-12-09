@@ -22,6 +22,7 @@ DEFAULT_SCHEDULE = "transformer"
 DEFAULT_WARM_UP_STEPS = 8000
 DEFAULT_TASK = "mask_aug"
 DEFAULT_AUGMENT = True
+DEFAULT_GAMMA = 0
 
 
 def build_model(args, sampler, vocab_size, total_steps, pad_token_idx):
@@ -179,6 +180,8 @@ if __name__ == "__main__":
     parser.add_argument("--augment", dest="augment", action="store_true")
     parser.add_argument("--no_augment", dest="augment", action="store_false")
     parser.set_defaults(augment=DEFAULT_AUGMENT)
+
+    parser.add_argument("--gamma", type = float, default=DEFAULT_GAMMA)
 
     args = parser.parse_args()
     main(args)

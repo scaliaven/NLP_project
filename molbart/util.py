@@ -14,7 +14,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, Ca
 
 from molbart.tokeniser import MolEncTokeniser
 from molbart.models.pre_train import BARTModel, UnifiedModel
-from molbart.data.datasets import Chembl, Uspto50, UsptoMixed, UsptoSep, MolOpt, Zinc, ZincSlice
+from molbart.data.datasets import Chembl, Uspto50, UsptoTXT, UsptoTXT_gamma, UsptoMixed, UsptoSep, MolOpt, Zinc, ZincSlice
 from molbart.data.datamodules import MoleculeDataModule, FineTuneReactionDataModule
 
 
@@ -26,6 +26,7 @@ DEFAULT_D_FEEDFORWARD = 2048
 DEFAULT_ACTIVATION = "gelu"
 DEFAULT_MAX_SEQ_LEN = 512
 DEFAULT_DROPOUT = 0.1
+DEFAULT_GAMMA = 0
 
 DEFAULT_DEEPSPEED_CONFIG_PATH = "ds_config.json"
 DEFAULT_LOG_DIR = "tb_logs"
@@ -160,6 +161,12 @@ def build_dataset(args, forward=True):
     if args.dataset == "uspto_50":
         dataset = Uspto50(args.data_path, aug_prob, forward=forward)
         print("Using USPTO 50K dataset without type tokens.")
+    elif args.dataset == "UsptoTXT":
+        dataset = UsptoTXT(args.data_path, aug_prob, type_token=True, forward=forward)
+        print("Using self txt dataset without type tokens.")
+    elif args.dataset == "UsptoTXT_gamma":
+        dataset = UsptoTXT_gamma(args.data_path, aug_prob, args.gamma, type_token=True, forward=forward)
+        print("Using self txt dataset with gamma rate of generated examples.")
     elif args.dataset == "uspto_50_with_type":
         dataset = Uspto50(args.data_path, aug_prob, type_token=True, forward=forward)
         print("Using USPTO 50K dataset with type tokens.")
@@ -167,7 +174,7 @@ def build_dataset(args, forward=True):
         dataset = UsptoMixed(args.data_path, aug_prob)
         print("Using USPTO MIT Mixed dataset.")
     elif args.dataset == "uspto_sep":
-        dataset = UsptoSep(args.data_path, aug_prob)
+        dataset = UsptoSep(args.data_path, aug_prob, args.gamma)
         print("Using USPTO MIT Separated dataset.")
     elif args.dataset == "mol_opt":
         dataset = MolOpt(args.data_path, aug_prob)

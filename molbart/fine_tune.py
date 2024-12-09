@@ -4,7 +4,7 @@ import argparse
 import molbart.util as util
 from molbart.decoder import DecodeSampler
 from molbart.models.pre_train import BARTModel, UnifiedModel
-import peft
+# import peft
 
 
 # Default training hyperparameters
@@ -23,6 +23,7 @@ DEFAULT_NUM_BUCKETS = 24
 DEFAULT_LIMIT_VAL_BATCHES = 1.0
 DEFAULT_DOWNSTREAM_VOCAB_PATH = "bart_vocab_downstream.txt"
 DEFAULT_MODEL_TYPE = "bart"
+DEFAULT_GAMMA = 0
 
 
 def load_rand_model(args, extra_args, sampler, vocab_size, total_steps, pad_token_idx):
@@ -90,6 +91,7 @@ def load_model(args, sampler, vocab_size, total_steps, pad_token_idx):
         "fix_encoder": args.fix_encoder,
         "insert_mid_layer": args.insert_mid_layer,
         "add_end_layer": args.add_end_layer,
+        "gamma": args.gamma
     }
 
     # If no model is given, use random init
@@ -218,6 +220,7 @@ if __name__ == "__main__":
     parser.add_argument('--insert_mid_layer', action='store_true', default=False, help="inserting layers between encoder and decoder")
     parser.add_argument('--add_end_layer', action='store_true', default=False, help="adding layers after decoder")
     
+    parser.add_argument("--gamma", type = float, default=DEFAULT_GAMMA, help="default=0")
 
     # Rand init model args
     parser.add_argument("--d_model", type=int, default=util.DEFAULT_D_MODEL)

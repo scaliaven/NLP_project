@@ -108,6 +108,7 @@ class ReactionDataset(_AbsDataset):
         return train_dataset, val_dataset, test_dataset
 
     def _save_idxs(self, df):
+        print(df.keys())
         train_idxs = df.index[df["set"] == "train"]
         val_idxs = df.index[df["set"] == "valid"].tolist()
         test_idxs = df.index[df["set"] == "test"].tolist()
@@ -142,7 +143,7 @@ class Uspto50(ReactionDataset):
         type_tokens = df["reaction_type"].tolist()
 
         super().__init__(reactants, products, items=type_tokens, transform=self._prepare_strings, aug_prob=aug_prob)
-
+        print(len(type_tokens))
         self.type_token = type_token
         self.forward = forward
         self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
@@ -169,12 +170,164 @@ class UsptoMixed(ReactionDataset):
         super().__init__(reactants, products, transform=self._prepare_strings, aug_prob=aug_prob)
 
         self.aug_prob = aug_prob
-        self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
+        # self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
 
     def _prepare_strings(self, react, prod):
         react_str = self._augment_to_smiles(react)
         prod_str = self._augment_to_smiles(prod)
         return react_str, prod_str
+
+
+class UsptoTXT(ReactionDataset):
+    def __init__(self, data_path, aug_prob=0.0, type_token=False, forward=True):
+        """
+        Initializes the UsptoTXT dataset.
+
+        Args:
+            data_path (str or Path): Path to the TXT data file.
+            aug_prob (float, optional): Probability of applying augmentation. Set to 0.0 to disable. Defaults to 0.0.
+            type_token (bool, optional): Whether to add type tokens. Defaults to False.
+            forward (bool, optional): Direction to add type tokens (to reactants or products). Defaults to True.
+        """
+        path = Path(data_path)
+        df = pd.read_csv(path, sep='\t')
+        
+        # Extract columns
+        reactants = df["Reactants"].tolist()
+        products = df["Products"].tolist()
+        type_tokens = df["set"].tolist()  # Assuming 'Set' indicates train/val/test
+        # print(reactants[0])
+        # print(products[0])
+        # print(type_tokens[0])
+
+        # Decide whether to apply transformation
+        # transform = None
+        # print(len(products))
+        # Initialize the superclass with augmentation disabled
+        super().__init__(reactants, products, items=type_tokens, transform=self._prepare_strings, aug_prob=0)
+
+
+        self.type_token = type_token
+        self.forward = forward
+        self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
+
+    def _prepare_strings(self, react, prod, type_token):
+        """
+        Prepares the reactant and product strings by optionally adding type tokens.
+
+        Args:
+            react (str): SMILES string of the reactant.
+            prod (str): SMILES string of the product.
+            set_label (str): Label indicating the set ('train', 'valid', 'test').
+
+        Returns:
+            tuple: (processed_reactant, processed_product)
+        """
+        # Optionally add type tokens based on the 'forward' flag
+        if self.forward:
+            react_str = f"{str(type_token)} {react}" if self.type_token else react
+            prod_str = prod
+        else:
+            react_str = react
+            prod_str = f"{str(type_token)} {prod}" if self.type_token else prod
+        return react_str, prod_str
+
+    def _save_idxs(self, df):
+        val_idxs = df.index[df["set"] == "valid"].tolist()
+        test_idxs = df.index[df["set"] == "test"].tolist()
+
+        idxs_intersect = set(val_idxs).intersection(set(test_idxs))
+        if len(idxs_intersect) > 0:
+            raise ValueError(f"Val idxs and test idxs overlap")
+
+        idxs = set(range(len(df.index)))
+        train_idxs = idxs - set(val_idxs).union(set(test_idxs))
+
+        return train_idxs, val_idxs, test_idxs
+
+
+
+class UsptoTXT_gamma(ReactionDataset):
+    def __init__(self, data_path, aug_prob=0.0, gamma=0, type_token=False, forward=True):
+        """
+        Initializes the UsptoTXT dataset.
+
+        Args:
+            data_path (str or Path): Path to the TXT data file.
+            aug_prob (float, optional): Probability of applying augmentation. Set to 0.0 to disable. Defaults to 0.0.
+            type_token (bool, optional): Whether to add type tokens. Defaults to False.
+            forward (bool, optional): Direction to add type tokens (to reactants or products). Defaults to True.
+        """
+        path = Path(data_path)
+        df = pd.read_csv(path, sep='\t')
+
+        self.gamma = gamma
+        print("gamma:" + str(self.gamma))
+
+        # Extract columns
+        reactants = df["Reactants"].tolist()
+        golden = df["Golden"].tolist()
+        products = df["Products"].tolist()
+        type_tokens = df["set"].tolist()  # Assuming 'Set' indicates train/val/test
+        # print(reactants[0])
+        # print(products[0])
+        # print(type_tokens[0])
+
+        # Decide whether to apply transformation
+        # transform = None
+        # print(len(products))
+        # Initialize the superclass with augmentation disabled
+
+        cnt = 0
+        for i in range(len(products)):
+            if random.random() > self.gamma:
+                products[i] = golden[i]
+                # print("golden")
+                cnt += 1
+
+        print("number of goldens:" + str(cnt))
+            
+    
+        super().__init__(reactants, products, items=type_tokens, transform=self._prepare_strings, aug_prob=0)
+
+
+        self.type_token = type_token
+        self.forward = forward
+        self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
+
+    def _prepare_strings(self, react, prod, type_token):
+        """
+        Prepares the reactant and product strings by optionally adding type tokens.
+
+        Args:
+            react (str): SMILES string of the reactant.
+            prod (str): SMILES string of the product.
+            set_label (str): Label indicating the set ('train', 'valid', 'test').
+
+        Returns:
+            tuple: (processed_reactant, processed_product)
+        """
+        # Optionally add type tokens based on the 'forward' flag
+        if self.forward:
+            react_str = f"{str(type_token)} {react}" if self.type_token else react
+            prod_str = prod
+        else:
+            react_str = react
+            prod_str = f"{str(type_token)} {prod}" if self.type_token else prod
+        return react_str, prod_str
+
+    def _save_idxs(self, df):
+        val_idxs = df.index[df["set"] == "valid"].tolist()
+        test_idxs = df.index[df["set"] == "test"].tolist()
+
+        idxs_intersect = set(val_idxs).intersection(set(test_idxs))
+        if len(idxs_intersect) > 0:
+            raise ValueError(f"Val idxs and test idxs overlap")
+
+        idxs = set(range(len(df.index)))
+        train_idxs = idxs - set(val_idxs).union(set(test_idxs))
+
+        return train_idxs, val_idxs, test_idxs
 
 
 class UsptoSep(ReactionDataset):
