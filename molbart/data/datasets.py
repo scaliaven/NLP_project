@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 from torch.utils.data import Dataset
 from pysmilesutils.augment import MolAugmenter
-
+import numpy as np
 
 class _AbsDataset(Dataset):
     def __len__(self):
@@ -277,15 +277,23 @@ class UsptoTXT_gamma(ReactionDataset):
         # transform = None
         # print(len(products))
         # Initialize the superclass with augmentation disabled
+        
+        indices = np.arange(len(products))
+        np.random.shuffle(indices)
+        num_to_modify = int(len(products) * self.gamma)
 
-        cnt = 0
-        for i in range(len(products)):
-            if random.random() > self.gamma:
-                products[i] = golden[i]
-                # print("golden")
-                cnt += 1
+        for i in range(num_to_modify):
+            idx = indices[i]
+            products[idx] = golden[idx]
 
-        print("number of goldens:" + str(cnt))
+        print("number of goldens:" + str(num_to_modify))
+
+        np.random.shuffle(indices)
+
+        reactants = [reactants[i] for i in indices]
+        products = [products[i] for i in indices]
+        golden = [golden[i] for i in indices]
+        type_tokens = [type_tokens[i] for i in indices]
             
     
         super().__init__(reactants, products, items=type_tokens, transform=self._prepare_strings, aug_prob=0)
