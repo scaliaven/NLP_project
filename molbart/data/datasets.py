@@ -279,7 +279,9 @@ class UsptoTXT_gamma(ReactionDataset):
         # Initialize the superclass with augmentation disabled
         
         indices = np.arange(len(products))
-        np.random.shuffle(indices)
+
+        rng1 = np.random.RandomState(42)
+        rng1.shuffle(indices)
         num_to_modify = int(len(products) * self.gamma)
 
         for i in range(num_to_modify):
@@ -288,7 +290,8 @@ class UsptoTXT_gamma(ReactionDataset):
 
         print("number of goldens:" + str(num_to_modify))
 
-        np.random.shuffle(indices)
+        rng2 = np.random.RandomState(2024)
+        rng2.shuffle(indices)
 
         reactants = [reactants[i] for i in indices]
         products = [products[i] for i in indices]
