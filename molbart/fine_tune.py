@@ -181,6 +181,11 @@ def main(args):
     trainer.fit(model, datamodule=dm)
     print("Finished training.")
 
+    print("testing data module to model")
+    trainer.test(model)
+    util.print_results(args, results[0])
+    print("Finished testing.")
+
     print("Printing unknown tokens...")
     tokeniser.print_unknown_tokens()
     print("Complete.")
