@@ -182,7 +182,7 @@ def main(args):
     print("Finished training.")
 
     print("testing data module to model")
-    trainer.test(model)
+    results = trainer.test(model)
     util.print_results(args, results[0])
     print("Finished testing.")
 
