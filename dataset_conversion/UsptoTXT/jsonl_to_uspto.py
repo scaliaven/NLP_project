@@ -3,12 +3,14 @@ import json, random
 # Open the JSONL file
 def main(f1, f2):
     with open(f1, 'r', encoding='utf-8') as file:
-        input_smiless, pred_smiless = [], []
+        input_smiless, pred_smiless, golden_smiless = [], [], []
         for line in file:
             # Parse each line as JSON
             data = json.loads(line.strip())
             input_smiles = data.get('input', '')
             gold_smiles = data.get('gold', '')
+            golden_smiless.append(gold_smiles)
+
             try:
                 pred_smiles = data.get('output', [])
 
@@ -46,4 +48,4 @@ def main(f1, f2):
         
 
 if __name__ == "__main__":
-    main('/Users/zhaodongliu/Documents/GitHub/NLP_project/retrosynthesis.jsonl', '/Users/zhaodongliu/Documents/GitHub/NLP_project/retro.txt')
+    main('/Users/zhaodongliu/Documents/GitHub/NLP_project/retrosynthesis.jsonl', '/Users/zhaodongliu/Documents/GitHub/NLP_project/retro0.txt')
