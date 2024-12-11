@@ -1,9 +1,9 @@
 #!/bin/bash
 
 python -m molbart.fine_tune \
-  --dataset UsptoTXT \
-  --data_path /scratch/zl4789/hhj_updated.txt \
-  --model_path /scratch/zl4789/NLP/project/Chemformer-release-1.0/models/pre-trained/combined/step=1000000.ckpt \
+  --dataset uspto_50 \
+  --data_path /gpfsnyu/scratch/hh3043/Chemformer/data/seq-to-seq_datasets/uspto_50.pickle \
+  --model_path /gpfsnyu/scratch/hh3043/Chemformer/models/pre-trained/combined/step_1000000.ckpt \
   --task backward_prediction \
   --epochs 100 \
   --lr 0.001 \
@@ -13,6 +13,9 @@ python -m molbart.fine_tune \
   --augment all \
   --aug_prob 0.5 \
   --gpus 1 \
+  --fix_encoder \
+  # --encoder_lora \
+  --fix_encoder \
   # --fix_encoder \
   # --fix_decoder \
   # --add_end_layer \

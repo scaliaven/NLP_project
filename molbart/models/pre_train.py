@@ -8,7 +8,8 @@ from functools import partial
 from molbart.models.util import (
     PreNormEncoderLayer,
     PreNormDecoderLayer,
-    FuncLR
+    FuncLR,
+    LinearWithLoRA
 )
 
 
@@ -388,6 +389,22 @@ class BARTModel(_AbsTransformerModel):
         self._init_params()
         self.kwargs = kwargs
 
+        if self.kwargs['fix_decoder']:
+            print("fixing decoder")
+            for param in self.decoder.parameters():
+                param.requires_grad = False
+
+        elif self.kwargs['fix_encoder']:
+            print("fixing encoder")
+            for param in self.encoder.parameters():
+                param.requires_grad = False
+
+        if self.kwargs['encoder_lora']:
+            self.lora_layers = self.add_lora_layers(8, 32, self.encoder) #（rank, alpha)
+        if self.kwargs['decoder_lora']:
+            self.lora_layers = self.add_lora_layers(8, 32, self.decoder)
+
+
     def forward(self, x):
         """ Apply SMILES strings to model
 
@@ -494,6 +511,20 @@ class BARTModel(_AbsTransformerModel):
         token_probs = self.log_softmax(token_output)
         return token_probs
 
+    def add_lora_layers(self, rank, alpha, model):
+        lora_layers = []
+        for name, module in model.named_modules():
+            if isinstance(module, torch.nn.Linear):
+                # Replace the layer with LinearWithLoRA
+                new_module = LinearWithLoRA(module, rank, alpha)
+                parent_module, attr_name = name.rsplit('.', 1) if '.' in name else (self.encoder, name)
+                parent = dict(model.named_modules())[parent_module]
+                
+                setattr(parent, attr_name, new_module)  # Replace the layer
+                lora_layers.append(new_module)  # Store reference
+                print(f"Replaced {name} with {new_module}")
+        return lora_layers
+
     def _calc_loss(self, batch_input, model_output):
         """ Calculate the loss for the model
 
@@ -592,24 +623,14 @@ class BARTModel(_AbsTransformerModel):
 
     def configure_optimizers(self):
 
-        if self.kwargs['lora']:
-            config = peft.LoraConfig(r=8, lora_alpha=16, target_modules=['q_proj', 'k_proj', 'v_proj'],
-                                    modules_to_save=['visual_projection'],
-                                    )
-            model.encoder.layers = peft.get_peft_model(model.encoder.layers, config)
-
-        elif self.kwargs['fix_decoder']:
-            print("fixing decoder")
-            for param in self.decoder.parameters():
-                param.requires_grad = False
-
-        elif self.kwargs['fix_encoder']:
-            print("fixing encoder")
-            for param in self.encoder.parameters():
-                param.requires_grad = False
-
         params = self.parameters()
-        optim = torch.optim.Adam(filter(lambda p: p.requires_grad, params), lr=self.lr, weight_decay=self.weight_decay, betas=(0.9, 0.999))
+        trainable_params = list(filter(lambda p: p.requires_grad, params))
+        def count_trainable_parameters(params):
+            return sum(p.numel() for p in params if p.requires_grad)
+
+        num_trainable_params = count_trainable_parameters(trainable_params)
+        print(num_trainable_params)
+        optim = torch.optim.Adam(trainable_params, lr=self.lr, weight_decay=self.weight_decay, betas=(0.9, 0.999))
 
         if self.schedule == "const":
             print("Using constant LR schedule.")

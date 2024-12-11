@@ -91,7 +91,9 @@ def load_model(args, sampler, vocab_size, total_steps, pad_token_idx):
         "fix_encoder": args.fix_encoder,
         "insert_mid_layer": args.insert_mid_layer,
         "add_end_layer": args.add_end_layer,
-        "gamma": args.gamma
+        "gamma": args.gamma,
+        "decoder_lora": args.decoder_lora,
+        "encoder_lora": args.encoder_lora
     }
 
     # If no model is given, use random init
@@ -219,6 +221,8 @@ if __name__ == "__main__":
     parser.add_argument('--fix_encoder', action='store_true', default=False, help="only decoder training enabled")
     parser.add_argument('--insert_mid_layer', action='store_true', default=False, help="inserting layers between encoder and decoder")
     parser.add_argument('--add_end_layer', action='store_true', default=False, help="adding layers after decoder")
+    parser.add_argument('--encoder_lora', action='store_true', default=False, help="lora train encoder")
+    parser.add_argument('--decoder_lora', action='store_true', default=False, help="lora train decoder")
     
     parser.add_argument("--gamma", type = float, default=DEFAULT_GAMMA, help="default=0")
 
