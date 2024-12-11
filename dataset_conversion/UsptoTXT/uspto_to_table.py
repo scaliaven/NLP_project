@@ -60,7 +60,7 @@ def convert_and_split_smiles(input_file, final_output_file):
 
         # Calculate 10% samples
         total_samples = len(data_shuffled)
-        test_count = valid_count = int(total_samples * 0.1)
+        test_count = valid_count = int(total_samples * 0.02)
 
         # Update 'set' column
         data_shuffled.loc[:test_count - 1, 'set'] = 'test'
